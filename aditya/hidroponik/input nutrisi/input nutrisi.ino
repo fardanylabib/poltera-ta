@@ -82,14 +82,14 @@ bool jalankanAlat() {
     tdsValue = gravityTds.getTdsValue();
     float nilaiTDS = mTDS * tdsValue + bTDS;
     if (lama < 86400000) {
-      EEPROM.get(20, dosis);      
-    }else if (lama > 86400000 && lama < 1209600000) {
-      EEPROM.get(25, dosis);      
-    }else if (lama > 1209600000 && lama < 1814400000) {
-      EEPROM.get(30, dosis);      
-    }else if (lama > 1814400000 && lama < 2419200000) {
-      EEPROM.get(35, dosis);      
-    }      
+      EEPROM.get(20, dosis);
+    } else if (lama > 86400000 && lama < 1209600000) {
+      EEPROM.get(25, dosis);
+    } else if (lama > 1209600000 && lama < 1814400000) {
+      EEPROM.get(30, dosis);
+    } else if (lama > 1814400000 && lama < 2419200000) {
+      EEPROM.get(35, dosis);
+    }
     if (nilaiTDS < dosis) {
       delay(3000);
       digitalWrite(relay3, HIGH);
@@ -106,8 +106,8 @@ bool jalankanAlat() {
       delay(300);
       digitalWrite(relay4, HIGH);
       delay(5000);
-    }    
-  } 
+    }
+  }
 }
 
 bool kalibrasi() {
@@ -128,6 +128,7 @@ bool kalibrasi() {
   float bTDS = (float)nilaiKalibrasiTDS[1];
   EEPROM.put(0, mTDS);
   EEPROM.put(5, bTDS);
+  return true;
 }
 bool pengaturanDosis() {
   rtc.begin();  //begin real time clock
