@@ -8,6 +8,19 @@
 #include "GravityTDS.h"
 #define TdsSensorPin A1
 #define DS3231_I2C_ADDRESS 104
+float calibration_value = 20.24 - 0.7;  //21.34 - 0.7
+int phval = 0;
+unsigned long int avgval;
+int buffer_arr[10], temp;
+float ph_act;
+//const int phSensorPin = A0;
+//float Po = 0;
+float nilaiP[6];
+float nilaiph[6];
+float mph[7];
+float bph[7];
+float phValue = 0, valueP = 0;
+double nilaiKalibrasiph[2] = { 0, 0 };
 float nilai[6];
 float nilaiTDS[6];
 float mTDS[7];
@@ -59,6 +72,7 @@ Time currentTime;
 LinearRegression lr;
 
 bool jalankanAlat() {
+  lcd.clear();
   long timeAcuan;
   float bTDS;
   float mTDS;
@@ -66,12 +80,17 @@ bool jalankanAlat() {
   EEPROM.get(5, bTDS);
   EEPROM.get(50, timeAcuan);
   rtc.begin();  //begin real time clock
-  lcd.setCursor(3, 0);
+  lcd.setCursor(0, 0);
   lcd.print(rtc.getDateStr());  // Print date to LCD
   lcd.setCursor(0, 1);
-  lcd.print(rtc.getTimeStr());  // Print time to LCD
-  lcd.setCursor(0, 2);
   lcd.print(rtc.getDOWStr());
+  lcd.setCursor(0, 2);
+  lcd.print("TDS: ");
+  lcd.setCursor(4, 2);
+  lcd.print(tdsValue, 0);
+  delay(100);
+  lcd.setCursor(8, 2);
+  lcd.print("PPM");
   float dosis;
 
   while (1) {
@@ -89,6 +108,10 @@ bool jalankanAlat() {
       EEPROM.get(30, dosis);
     } else if (lama > 1814400000 && lama < 2419200000) {
       EEPROM.get(35, dosis);
+    } else if (lama > 2419200000 && lama < 3024000000) {
+      EEPROM.get(40, dosis);
+    } else if (lama > 3024000000 && lama < 3628800000) {
+      EEPROM.get(45, dosis);
     }
     if (nilaiTDS < dosis) {
       delay(3000);
@@ -110,7 +133,7 @@ bool jalankanAlat() {
   }
 }
 
-bool kalibrasi() {
+bool kalibrasiTds() {
   lcd.clear();
   for (int i = 0; i < 6; i++) {
     lcd.setCursor(0, 0);
@@ -146,6 +169,26 @@ bool pengaturanDosis() {
   }
   return true;
 }
+bool kalibrasipH() {
+  lcd.clear();
+  for (int i = 0; i < 6; i++) {
+    lcd.setCursor(0, 0);
+    lcd.print("nilai:ke ");
+    lcd.print(i + 1);
+    float value = getFloatFromKeypad(buff);
+    phValue = analogRead(A0);  // then get the value
+    lr.learn(valueP, ph_act);
+    lcd.setCursor(0, 2);
+    lcd.print(ph_act);
+    delay(500);
+  }
+  lr.getValues(nilaiKalibrasiph);
+  float mph = (float)nilaiKalibrasiph[0];
+  float bph = (float)nilaiKalibrasiph[1];
+  EEPROM.put(10, mph);
+  EEPROM.put(15, bph);
+  return true;
+}
 char getCharFromKeypad() {
   while (1) {
     char keypressed = customKeypad.getKey();
@@ -161,7 +204,6 @@ float getFloatFromKeypad(char* arr) {
       if (keypressed == 'D' || cursorColom > 3) {
         cursorColom = 0;
         lcd.clear();
-        lcd.print("masukkan ke");
         return atof(arr);
 
       } else {
@@ -187,7 +229,32 @@ void setup() {
   pinMode(TdsSensorPin, INPUT);
   lr = LinearRegression();
 }
+void pH() {
+  for (int i = 0; i < 10; i++) {
+    buffer_arr[i] = analogRead(35);
+    delay(30);
+  }
+  for (int i = 0; i < 9; i++) {
+    for (int j = i + 1; j < 10; j++) {
+      if (buffer_arr[i] > buffer_arr[j]) {
+        temp = buffer_arr[i];
+        buffer_arr[i] = buffer_arr[j];
+        buffer_arr[j] = temp;
+      }
+    }
+  }
+  avgval = 0;
+  for (int i = 2; i < 8; i++)
+    avgval += buffer_arr[i];
+  float volt = (float)avgval * 3 / 4096.0 / 6;
+  //Serial.print("Voltage: ");
+  //Serial.println(volt);
+  ph_act = -5.70 * volt + calibration_value;
 
+  lcd.print("pH Val: ");
+  lcd.println(ph_act);
+  delay(1000);
+}
 void loop() {
   //float tds = analogRead();
   lcd.setCursor(0, 0);
@@ -196,16 +263,21 @@ void loop() {
   lcd.print("2. kalibrasi TDS");
   lcd.setCursor(0, 2);
   lcd.print("3. dosis");
+  lcd.setCursor(0, 3);
+  lcd.print("4. kalibrasi pH");
   char menuTerpilih = getCharFromKeypad();
   switch (menuTerpilih) {
     case '1':
       jalankanAlat();
       break;
     case '2':
-      kalibrasi();
+      kalibrasiTds();
       break;
     case '3':
       pengaturanDosis();
+      break;
+    case '4':
+      kalibrasipH();
       break;
   }
 }
