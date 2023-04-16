@@ -140,6 +140,8 @@ bool kalibrasiTds() {
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float value = getFloatFromKeypad(buff);
+    lcd.setCursor(0, 3);
+    lcd.print(tdsValue, 0);
     tdsValue = gravityTds.getTdsValue();  // then get the value
     lr.learn(value, tdsValue);
 
