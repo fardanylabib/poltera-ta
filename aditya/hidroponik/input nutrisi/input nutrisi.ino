@@ -59,50 +59,60 @@ int tanggal;
 int menu = 0;
 int secupg;
 bool blinking = true;
-Time  t;
-int measurings = 0;
+Time time;
+Time currentTime;
 LinearRegression lr;
+int measurings = 0;
 bool jalankanAlat() {
   lcd.clear();
-  gravityTds.update();  //sample and calculate
-  tdsValue = gravityTds.getTdsValue();  // then get the value
+  long timeAcuan;
+  float bTDS;
+  float mTDS;
+  EEPROM.get(0, mTDS);
+  EEPROM.get(5, bTDS);
+  EEPROM.get(50, timeAcuan);
+  rtc.begin();  //begin real time clock
+  float dosis;
 
-  for (int i = 0; i < samples; i++) {
-    measurings += analogRead(pHSense);
-    delay(10);
-  }
-  float voltage = 5 / adc_resolution * measurings / samples;
+  while (1) {
+    currentTime = rtc.getTime();
+    long timeNumber = rtc.getUnixTime(currentTime);
 
-  if (tdsValue >= dosis) {
-    lcd.clear();
-    lcd.setCursor(0, 2);
-    lcd.print(tdsValue, 0);
-    lcd.print("PPM");
-    lcd.setCursor(0, 3);
-    lcd.print(ph(voltage));
-    lcd.print("pH");
-    digitalWrite(relay3, LOW);
-    digitalWrite(relay4, LOW);
-    digitalWrite(relay, HIGH);
-    digitalWrite(relay2, HIGH);
-    delay(800);
-    digitalWrite(relay4, HIGH);
-    digitalWrite(relay, LOW);
-    digitalWrite(relay2, LOW);
-    delay(2000);
-  }
-  else {
-    lcd.clear();
-    lcd.setCursor(0, 2);
-    lcd.print(tdsValue, 0);
-    lcd.print("PPM");
-    lcd.setCursor(0, 3);
-    lcd.print(ph(voltage));
-    lcd.print("pH");
-    digitalWrite(relay3, HIGH);
-    digitalWrite(relay, LOW);
-    digitalWrite(relay2, LOW);
-    digitalWrite(relay4, LOW);
+    long lama = timeNumber - timeAcuan;
+    tdsValue = gravityTds.getTdsValue();
+    float nilaiTDS = mTDS * tdsValue + bTDS;
+    if (lama < 86400000) {
+      EEPROM.get(20, dosis);
+      lcd.setCursor(0, 0);
+      lcd.print(tdsValue, 0);
+      lcd.print("PPM");
+    } else if (lama > 86400000 && lama < 1209600000) {
+      EEPROM.get(25, dosis);
+    } else if (lama > 1209600000 && lama < 1814400000) {
+      EEPROM.get(30, dosis);
+    } else if (lama > 1814400000 && lama < 2419200000) {
+      EEPROM.get(35, dosis);
+    } else if (lama > 2419200000 && lama < 3024000000) {
+      EEPROM.get(40, dosis);
+    } else if (lama > 3024000000 && lama < 3628800000) {
+      EEPROM.get(45, dosis);
+    }
+    if (nilaiTDS < dosis) {
+      digitalWrite(relay3, LOW);
+      digitalWrite(relay4, LOW);
+      digitalWrite(relay, HIGH);
+      digitalWrite(relay2, HIGH);
+      delay(800);
+      digitalWrite(relay4, HIGH);
+      digitalWrite(relay, LOW);
+      digitalWrite(relay2, LOW);
+      delay(2000);
+    } else {
+      digitalWrite(relay3, HIGH);
+      digitalWrite(relay, LOW);
+      digitalWrite(relay2, LOW);
+      digitalWrite(relay4, LOW);
+    }
   }
 }
 bool kalibrasiTds() {
@@ -144,7 +154,7 @@ bool aturWaktu() {
   lcd.begin(4, 20); // initialize the lcd
   lcd.backlight();
   rtc.begin();  //begin real time clock
-  t = rtc.getTime();
+  time = rtc.getTime();
   int  Credit, Num;
   //menu = 0;
   customKey =  customKeypad.getKey();  //read form keypad
