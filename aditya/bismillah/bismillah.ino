@@ -10,12 +10,11 @@
 int pHSense = A0;
 int samples = 10;
 float adc_resolution = 1024.0;
-float nilai[6];
-float nilaiTDS[6];
+float nilaiTDS = 0;
 float mTDS[7];
 float bTDS[7];
 GravityTDS gravityTds;
-float tdsValue = 0, value = 0;
+float tdsValue = 0;
 double nilaiKalibrasiTDS[2] = { 0, 0 };
 int relay = 2;    //nutrisi A
 int relay2 = 3;   //nutrisi B
@@ -34,7 +33,9 @@ char tombol[BARIS][KOLOM] = {
   { '7', '8', '9', 'C' },
   { '.', '0', '#', 'D' }
 };
-
+float ph(float voltage) {
+  return 7 + ((4.5 - voltage) / 0.18);
+}
 byte pinBaris[BARIS] = { 11, 10, 9, 8 };
 byte pinKolom[KOLOM] = { 7, 6, 5, 4 };
 int cursorColom = 0;
@@ -60,13 +61,37 @@ bool jalankanAlat() {
     if (keypressed == 'A') {
       Serial.println("di tekan A");
       delay(1000);
+      digitalWrite(relay3, LOW);
+      digitalWrite(relay4, LOW);
+      digitalWrite(relay, LOW);
+      digitalWrite(relay2, LOW);
       return true;
     }
     currentTime = rtc.getTime();
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
     tdsValue = gravityTds.getTdsValue();
-    float nilaiTDS = mTDS * tdsValue + bTDS;
+    float nilaiTDS = ((tdsValue - bTDS) / mTDS);
+    lcd.setCursor(0, 0);
+    lcd.print("PPM mg ini: ");
+    lcd.print(dosis);
+    lcd.setCursor(0, 1);
+    lcd.print("PPM Sensor: ");
+    if (nilaiTDS < 0) {
+      nilaiTDS = 0;
+    }
+    lcd.print(nilaiTDS);
+    delay(2000);
+    int measurings = 0;
+    for (int i = 0; i < samples; i++) {
+      measurings += analogRead(pHSense);
+      delay(10);
+    }
+    float voltage = 5 / adc_resolution * measurings / samples;
+    lcd.setCursor(0, 2);
+    lcd.print("pH= ");
+    lcd.print(ph(voltage));
+    delay(2000);
 
     if (lama < 604800) {
       EEPROM.get(20, dosis);
@@ -87,35 +112,25 @@ bool jalankanAlat() {
       EEPROM.get(45, dosis);
       Serial.println("masuk 1");
     }
-    int measurings = 0;
-    for (int i = 0; i < samples; i++) {
-      measurings += analogRead(pHSense);
-      delay(10);
-    }
-    float voltage = 5 / adc_resolution * measurings / samples;
     gravityTds.update();                  //sample and calculate
     tdsValue = gravityTds.getTdsValue();  // then get the value
-    lcd.setCursor(0, 0);
-    lcd.print("PPM mg ini: ");
-    lcd.print(dosis);
-    lcd.setCursor(0, 1);
-    lcd.print("PPM Sensor: ");
-    lcd.print(nilaiTDS);
-    lcd.setCursor(0, 2);
-    lcd.print(ph(voltage));
-    lcd.print("pH");
-    delay(2000);
+
     if (nilaiTDS <= dosis) {
       Serial.println("semprot");
       digitalWrite(relay3, LOW);
       digitalWrite(relay4, LOW);
       digitalWrite(relay, HIGH);
-      digitalWrite(relay2, HIGH);
-      delay(800);
+      digitalWrite(relay2, LOW);
+      delay(150);
       digitalWrite(relay4, HIGH);
       digitalWrite(relay, LOW);
+      delay(5000);
+      digitalWrite(relay4, LOW);
+      digitalWrite(relay2, HIGH);
+      delay(150);
+      digitalWrite(relay4, HIGH);
       digitalWrite(relay2, LOW);
-      delay(2000);
+      delay(5000);
     } else {
       Serial.println("pompa aktif");
       digitalWrite(relay3, HIGH);
@@ -128,13 +143,22 @@ bool jalankanAlat() {
 bool kalibrasiTds() {
   lcd.clear();
   for (int i = 0; i < 7; i++) {
-    // semproy dan aduk(dealy 5)
+    digitalWrite(relay, HIGH);
+    digitalWrite(relay2, HIGH);
+    digitalWrite(relay4, LOW);
+    delay(500);
+    digitalWrite(relay, LOW);
+    digitalWrite(relay2, LOW);
+    digitalWrite(relay4, HIGH);
+    delay(2000);
     gravityTds.update();                  //sample and calculate
     tdsValue = gravityTds.getTdsValue();  // then get the value
+    lcd.setCursor(0, 3);
     lcd.print(tdsValue, 0);
     lcd.print("ppm");
-    // delay(1000);
-    lcd.setCursor(0, 3);
+    Serial.println(tdsValue, 0);
+    delay(2000);
+    lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float value = getFloatFromKeypad(buff);
@@ -210,9 +234,6 @@ void setup() {
   pinMode(relay3, OUTPUT);
   pinMode(relay4, OUTPUT);
   lr = LinearRegression();
-}
-float ph(float voltage) {
-  return 7 + ((3.21 - voltage) / 0.18);
 }
 
 void loop() {
