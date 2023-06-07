@@ -146,11 +146,12 @@ bool kalibrasiTds() {
     digitalWrite(relay, HIGH);
     digitalWrite(relay2, HIGH);
     digitalWrite(relay4, LOW);
-    delay(500);
+    delay(150);
     digitalWrite(relay, LOW);
     digitalWrite(relay2, LOW);
     digitalWrite(relay4, HIGH);
-    delay(2000);
+    delay(5000);
+    digitalWrite(relay4, LOW);
     gravityTds.update();                  //sample and calculate
     tdsValue = gravityTds.getTdsValue();  // then get the value
     lcd.setCursor(0, 3);
