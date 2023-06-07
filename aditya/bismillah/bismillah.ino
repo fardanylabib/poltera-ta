@@ -70,6 +70,7 @@ bool jalankanAlat() {
     currentTime = rtc.getTime();
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
+    gravityTds.update();  //sample and calculate
     tdsValue = gravityTds.getTdsValue();
     float nilaiTDS = ((tdsValue - bTDS) / mTDS);
     lcd.setCursor(0, 0);
@@ -112,8 +113,7 @@ bool jalankanAlat() {
       EEPROM.get(45, dosis);
       Serial.println("masuk 1");
     }
-    gravityTds.update();                  //sample and calculate
-    tdsValue = gravityTds.getTdsValue();  // then get the value
+
 
     if (nilaiTDS <= dosis) {
       Serial.println("semprot");
