@@ -272,9 +272,9 @@ void loop() {
   lcd.setCursor(0, 0);
   lcd.print("1. jalankan Alat");
   lcd.setCursor(0, 1);
-  lcd.print("2./3. kalibrasi TDS/pH");
+  lcd.print("2. kalibrasi TDS");
   lcd.setCursor(0, 2);
-  lcd.print("4. Dosis");
+  lcd.print("3. Klbrs pH/4. Dosis");
   lcd.setCursor(0, 3);
   lcd.print("5. Atur Waktu");
   char menuTerpilih = getCharFromKeypad();
