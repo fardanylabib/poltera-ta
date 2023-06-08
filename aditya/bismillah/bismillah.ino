@@ -11,11 +11,14 @@ int pHSense = A0;
 int samples = 10;
 float adc_resolution = 1024.0;
 float nilaiTDS = 0;
-float mTDS[7];
-float bTDS[7];
+float mTDS[15];
+float bTDS[15];
+float mpH[5];
+float bpH[5];
 GravityTDS gravityTds;
 float tdsValue = 0;
 double nilaiKalibrasiTDS[2] = { 0, 0 };
+double nilaiKalibrasipH[2] = { 0, 0 };
 int relay = 2;    //nutrisi A
 int relay2 = 3;   //nutrisi B
 int relay3 = 12;  //pompa air
@@ -121,13 +124,13 @@ bool jalankanAlat() {
       digitalWrite(relay4, LOW);
       digitalWrite(relay, HIGH);
       digitalWrite(relay2, LOW);
-      delay(150);
+      delay(100);
       digitalWrite(relay4, HIGH);
       digitalWrite(relay, LOW);
       delay(5000);
       digitalWrite(relay4, LOW);
       digitalWrite(relay2, HIGH);
-      delay(150);
+      delay(100);
       digitalWrite(relay4, HIGH);
       digitalWrite(relay2, LOW);
       delay(5000);
@@ -142,23 +145,24 @@ bool jalankanAlat() {
 }
 bool kalibrasiTds() {
   lcd.clear();
-  for (int i = 0; i < 7; i++) {
-    digitalWrite(relay, HIGH);
-    digitalWrite(relay2, HIGH);
-    digitalWrite(relay4, LOW);
-    delay(150);
-    digitalWrite(relay, LOW);
-    digitalWrite(relay2, LOW);
-    digitalWrite(relay4, HIGH);
+  for (int i = 0; i < 15; i++) {
+    // digitalWrite(relay, HIGH);
+    // digitalWrite(relay2, HIGH);
+    // digitalWrite(relay4, LOW);
+    // delay(100);
+    // digitalWrite(relay, LOW);
+    // digitalWrite(relay2, LOW);
+    // digitalWrite(relay4, HIGH);
+    // delay(5000);
+    // digitalWrite(relay4, LOW);
     delay(5000);
-    digitalWrite(relay4, LOW);
     gravityTds.update();                  //sample and calculate
     tdsValue = gravityTds.getTdsValue();  // then get the value
     lcd.setCursor(0, 3);
     lcd.print(tdsValue, 0);
     lcd.print("ppm");
     Serial.println(tdsValue, 0);
-    delay(2000);
+    delay(5000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
@@ -172,6 +176,31 @@ bool kalibrasiTds() {
   float bTDS = (float)nilaiKalibrasiTDS[1];
   EEPROM.put(0, mTDS);
   EEPROM.put(5, bTDS);
+  return true;
+}
+bool kalibrasipH() {
+  lcd.clear();
+  for (int i = 0; i < 5; i++) {
+    int measurings = 0;
+    for (int i = 0; i < samples; i++) {
+      measurings += analogRead(pHSense);
+      delay(10);
+    }
+    float voltage = 5 / adc_resolution * measurings / samples;
+    lcd.setCursor(0, 0);
+    lcd.print("pH= ");
+    lcd.print(ph(voltage));
+    delay(2000);
+    lcd.print("nilai : ");
+    lcd.print(i + 1);
+    float valuepH = getFloatFromKeypad(buff);
+    lr.learn (valuepH, ph(voltage));
+  }
+  lr.getValues(nilaiKalibrasipH);
+  float mpH = (float)nilaiKalibrasipH[0];
+  float bpH = (float)nilaiKalibrasipH[1];
+  EEPROM.put(10, mpH);
+  EEPROM.put(15, bpH);
   return true;
 }
 bool pengaturanDosis() {
@@ -241,13 +270,13 @@ void loop() {
   //float tds = analogRead();
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("1. jalankan alat");
+  lcd.print("1. jalankan Alat");
   lcd.setCursor(0, 1);
-  lcd.print("2. kalibrasi TDS");
+  lcd.print("2./3. kalibrasi TDS/pH");
   lcd.setCursor(0, 2);
-  lcd.print("3. dosis");
+  lcd.print("4. Dosis");
   lcd.setCursor(0, 3);
-  lcd.print("4. Atur Waktu");
+  lcd.print("5. Atur Waktu");
   char menuTerpilih = getCharFromKeypad();
   switch (menuTerpilih) {
     case '1':
@@ -257,9 +286,12 @@ void loop() {
       kalibrasiTds();
       break;
     case '3':
-      pengaturanDosis();
+      kalibrasipH();
       break;
     case '4':
+      pengaturanDosis();
+      break;
+    case '5':
       aturWaktu();
       break;
   }
