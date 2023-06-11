@@ -128,12 +128,16 @@ bool jalankanAlat() {
       digitalWrite(relay4, HIGH);
       digitalWrite(relay, LOW);
       delay(5000);
+      digitalRead(nilaiTDS);
+      delay(2000);
       digitalWrite(relay4, LOW);
       digitalWrite(relay2, HIGH);
       delay(100);
       digitalWrite(relay4, HIGH);
       digitalWrite(relay2, LOW);
       delay(5000);
+      digitalRead(nilaiTDS);
+      delay(2000);
     } else {
       Serial.println("pompa aktif");
       digitalWrite(relay3, HIGH);
@@ -155,14 +159,14 @@ bool kalibrasiTds() {
     // digitalWrite(relay4, HIGH);
     // delay(5000);
     // digitalWrite(relay4, LOW);
-    delay(5000);
+    // delay(5000);
     gravityTds.update();                  //sample and calculate
     tdsValue = gravityTds.getTdsValue();  // then get the value
     lcd.setCursor(0, 3);
     lcd.print(tdsValue, 0);
     lcd.print("ppm");
     Serial.println(tdsValue, 0);
-    delay(5000);
+    // delay(5000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
