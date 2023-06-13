@@ -36,9 +36,13 @@ char tombol[BARIS][KOLOM] = {
   { '7', '8', '9', 'C' },
   { '.', '0', '#', 'D' }
 };
-float ph(float voltage) {
-  return 7 + ((4.5 - voltage) / 0.18);
-}
+
+//=> FUNGSI INI DIHAPUS SAJA
+// float ph(float voltage) {
+//   return 7 + ((4.5 - voltage) / 0.18);
+// }
+
+
 byte pinBaris[BARIS] = { 11, 10, 9, 8 };
 byte pinKolom[KOLOM] = { 7, 6, 5, 4 };
 int cursorColom = 0;
@@ -51,10 +55,18 @@ long timeAcuan;
 bool jalankanAlat() {
   lcd.clear();
   // long timeAcuan;
-  float bTDS;
-  float mTDS;
-  EEPROM.get(0, mTDS);
-  EEPROM.get(5, bTDS);
+  float bTDS; //=> GANTI nama variabel jadi bTDSVal
+  float mTDS; //=> GANTI nama variabel jadi mTDSVal
+
+  //=> Disini bikin juga variabel seperti diatas (bPHVal dan mPHVal)
+  //=> float bPHVal;
+  //=> float mPHVal;
+
+  EEPROM.get(0, mTDS); //=> mTDSVal
+  EEPROM.get(5, bTDS); //=> bTDSVal
+
+  //=> Panggil EEPROM.get() untuk bPHVal dan mPHVal juga
+
   EEPROM.get(50, timeAcuan);
   rtc.begin();  //begin real time clock
   float dosis;
@@ -75,7 +87,7 @@ bool jalankanAlat() {
     long lama = timeNumber - timeAcuan;
     gravityTds.update();  //sample and calculate
     tdsValue = gravityTds.getTdsValue();
-    float nilaiTDS = ((tdsValue - bTDS) / mTDS);
+    float nilaiTDS = ((tdsValue - bTDS) / mTDS); //=> bTDSVal & mTDSVal
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
     lcd.print(dosis);
@@ -94,7 +106,9 @@ bool jalankanAlat() {
     float voltage = 5 / adc_resolution * measurings / samples;
     lcd.setCursor(0, 2);
     lcd.print("pH= ");
-    lcd.print(ph(voltage));
+    //=>Print nilai PH menggunakan rumus seperti  float nilaiTDS = ((tdsValue - bTDS) / mTDS);
+    //=>float nilaiPH = ((voltage - bPHVal) / mPHVal);
+    //=>lcd.print(nilaiPH);
     delay(2000);
 
     if (lama < 604800) {
@@ -193,12 +207,15 @@ bool kalibrasipH() {
     float voltage = 5 / adc_resolution * measurings / samples;
     lcd.setCursor(0, 0);
     lcd.print("pH= ");
-    lcd.print(ph(voltage));
+    // lcd.print(ph(voltage)); //=> Jangan pake fungsi ph() lagi
+    //=> langsung print: 
+    //=> lcd.print(voltage);
     delay(2000);
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float valuepH = getFloatFromKeypad(buff);
-    lr.learn (valuepH, ph(voltage));
+    //lr.learn (valuepH, ph(voltage)); //=> Jangan pake fungsi ph() lagi
+    //=> lr.learn (valuepH, voltage); 
   }
   lr.getValues(nilaiKalibrasipH);
   float mpH = (float)nilaiKalibrasipH[0];
@@ -276,7 +293,7 @@ void loop() {
   lcd.setCursor(0, 0);
   lcd.print("1. jalankan Alat");
   lcd.setCursor(0, 1);
-  lcd.print("2. kalibrasi TDS");
+  lcd.print("2. kalibrasi TDS");//=> 2. Klbrs TDS / 3. pH  => GINI SAJA
   lcd.setCursor(0, 2);
   lcd.print("3. Klbrs pH/4. Dosis");
   lcd.setCursor(0, 3);
