@@ -39,7 +39,7 @@ char tombol[BARIS][KOLOM] = {
 
 //=> FUNGSI INI DIHAPUS SAJA
 // float ph(float voltage) {
-//   return 7 + ((4.5 - voltage) / 0.18);
+//   return 7 + ((3.25 - voltage) / 0.18);
 // }
 
 
@@ -170,7 +170,7 @@ bool jalankanAlat() {
 }
 bool kalibrasiTds() {
   lcd.clear();
-  for (int i = 0; i < 15; i++) {
+  for (int i = 0; i < 10; i++) {
     // digitalWrite(relay, HIGH);
     // digitalWrite(relay2, HIGH);
     // digitalWrite(relay4, LOW);
@@ -207,20 +207,21 @@ bool kalibrasiTds() {
 }
 bool kalibrasipH() {
   lcd.clear();
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 3; i++) {
     int measurings = 0;
     for (int i = 0; i < samples; i++) {
       measurings += analogRead(pHSense);
       delay(10);
     }
     float voltage = 5 / adc_resolution * measurings / samples;
-    lcd.setCursor(0, 0);
+    lcd.setCursor(0, 3);
     lcd.print("pH= ");
     lcd.print(voltage);
     // lcd.print(ph(voltage)); //=> Jangan pake fungsi ph() lagi
     //=> langsung print:
     //=> lcd.print(voltage);
     delay(2000);
+    lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float valuepH = getFloatFromKeypad(buff);
@@ -247,7 +248,7 @@ bool pengaturanDosis() {
   }
   return true;
 }
-bool aturWaktu() {
+bool resetWaktu() {
   lcd.clear();
   lcd.begin(4, 20);  // initialize the lcd
   lcd.backlight();
@@ -308,7 +309,7 @@ void loop() {
   lcd.setCursor(0, 2);
   lcd.print("4. Dosis");
   lcd.setCursor(0, 3);
-  lcd.print("5. Atur Waktu");
+  lcd.print("5. Reset Waktu");
   char menuTerpilih = getCharFromKeypad();
   switch (menuTerpilih) {
     case '1':
@@ -324,7 +325,7 @@ void loop() {
       pengaturanDosis();
       break;
     case '5':
-      aturWaktu();
+      resetWaktu();
       break;
   }
 }
