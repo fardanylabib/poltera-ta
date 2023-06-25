@@ -71,6 +71,8 @@ bool jalankanAlat() {
   //=> Panggil EEPROM.get() untuk bPHVal dan mPHVal juga
   EEPROM.get(10, mPHVal);
   EEPROM.get(15, bPHVal);
+  Serial.print(mPHVal);
+  Serial.print(bPHVal);
 
   EEPROM.get(50, timeAcuan);
   rtc.begin();  //begin real time clock
@@ -108,8 +110,8 @@ bool jalankanAlat() {
       measurings += analogRead(pHSense);
       delay(10);
     }
-    float voltage = 5 / adc_resolution * measurings / samples;
-    float nilaiPH = ((voltage - bPHVal) / mPHVal);
+    // float voltage = 5 / adc_resolution * measurings / samples;
+    float nilaiPH = ((pHSense - bPHVal) / mPHVal);
     lcd.setCursor(0, 2);
     lcd.print("pH= ");
     lcd.print(nilaiPH);
@@ -139,7 +141,7 @@ bool jalankanAlat() {
     }
 
 
-    if (nilaiTDS <= dosis) {
+    if (nilaiTDS <= dosis - 50) {
       Serial.println("semprot");
       digitalWrite(relay3, LOW);
       digitalWrite(relay4, LOW);
@@ -170,7 +172,7 @@ bool jalankanAlat() {
 }
 bool kalibrasiTds() {
   lcd.clear();
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 2; i++) {
     // digitalWrite(relay, HIGH);
     // digitalWrite(relay2, HIGH);
     // digitalWrite(relay4, LOW);
@@ -208,15 +210,15 @@ bool kalibrasiTds() {
 bool kalibrasipH() {
   lcd.clear();
   for (int i = 0; i < 3; i++) {
-    int measurings = 0;
-    for (int i = 0; i < samples; i++) {
-      measurings += analogRead(pHSense);
-      delay(10);
-    }
-    float voltage = 5 / adc_resolution * measurings / samples;
+    // int measurings = 0;
+    // for (int i = 0; i < samples; i++) {
+    //   measurings += analogRead(pHSense);
+    //   delay(10);
+    // }
+    // float voltage = 5 / adc_resolution * measurings / samples;
     lcd.setCursor(0, 3);
-    lcd.print("pH= ");
-    lcd.print(voltage);
+    lcd.print("pH : ");
+    lcd.print(pHSense);
     // lcd.print(ph(voltage)); //=> Jangan pake fungsi ph() lagi
     //=> langsung print:
     //=> lcd.print(voltage);
@@ -225,13 +227,15 @@ bool kalibrasipH() {
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float valuepH = getFloatFromKeypad(buff);
-    lr.learn(valuepH, voltage);
+    lr.learn(valuepH, pHSense);
     //lr.learn (valuepH, ph(voltage)); //=> Jangan pake fungsi ph() lagi
     //=> lr.learn (valuepH, voltage);
   }
   lr.getValues(nilaiKalibrasipH);
   float mPHVal = (float)nilaiKalibrasipH[0];
   float bPHVal = (float)nilaiKalibrasipH[1];
+  Serial.print(mPHVal);
+  Serial.print(bPHVal);
   EEPROM.put(10, mPHVal);
   EEPROM.put(15, bPHVal);
   return true;
