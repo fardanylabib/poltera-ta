@@ -5,18 +5,14 @@
 #include <EEPROM.h>
 #include <DS3231.h>
 #include <LinearRegression.h>
-#include "GravityTDS.h"
-#define TdsSensorPin A1
-int pHSense = A0;
+#define pHSense A0
+#define tdsValue A1
 int samples = 10;
-float adc_resolution = 1024.0;
 float nilaiTDS = 0;
 float mTDS[15];
 float bTDS[15];
 float mpH[5];
 float bpH[5];
-GravityTDS gravityTds;
-float tdsValue = 0;
 double nilaiKalibrasiTDS[2] = { 0, 0 };
 double nilaiKalibrasipH[2] = { 0, 0 };
 int relay = 2;    //nutrisi A
@@ -36,13 +32,6 @@ char tombol[BARIS][KOLOM] = {
   { '7', '8', '9', 'C' },
   { '.', '0', '#', 'D' }
 };
-
-//=> FUNGSI INI DIHAPUS SAJA
-// float ph(float voltage) {
-//   return 7 + ((3.25 - voltage) / 0.18);
-// }
-
-
 byte pinBaris[BARIS] = { 11, 10, 9, 8 };
 byte pinKolom[KOLOM] = { 7, 6, 5, 4 };
 int cursorColom = 0;
@@ -52,18 +41,16 @@ Time currentTime;
 LinearRegression lr;
 int measurings = 0;
 long timeAcuan;
+
 bool jalankanAlat() {
   lcd.clear();
-  // long timeAcuan;
   float bTDSVal;  //=> GANTI nama variabel jadi bTDSVal
   float mTDSVal;  //=> GANTI nama variabel jadi mTDSVal
-
   //=> Disini bikin juga variabel seperti diatas (bPHVal dan mPHVal)
   //=> float bPHVal;
   //=> float mPHVal;
   float bPHVal;
   float mPHVal;
-
   EEPROM.get(0, mTDSVal);  //=> mTDSVal
   EEPROM.get(5, bTDSVal);  //=> bTDSVal
   Serial.print(mTDSVal);
@@ -73,11 +60,9 @@ bool jalankanAlat() {
   EEPROM.get(15, bPHVal);
   Serial.print(mPHVal);
   Serial.print(bPHVal);
-
   EEPROM.get(50, timeAcuan);
   rtc.begin();  //begin real time clock
   float dosis;
-
   while (1) {
     char keypressed = customKeypad.getKey();
     if (keypressed == 'A') {
@@ -92,8 +77,6 @@ bool jalankanAlat() {
     currentTime = rtc.getTime();
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
-    gravityTds.update();  //sample and calculate
-    tdsValue = gravityTds.getTdsValue();
     float nilaiTDS = ((tdsValue - bTDSVal) / mTDSVal);  //=> bTDSVal & mTDSVal
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
@@ -110,16 +93,14 @@ bool jalankanAlat() {
       measurings += analogRead(pHSense);
       delay(10);
     }
-    // float voltage = 5 / adc_resolution * measurings / samples;
     float nilaiPH = ((pHSense - bPHVal) / mPHVal);
     lcd.setCursor(0, 2);
-    lcd.print("pH= ");
+    lcd.print("pH : ");
     lcd.print(nilaiPH);
     //=>Print nilai PH menggunakan rumus seperti  float nilaiTDS = ((tdsValue - bTDS) / mTDS);
     //=>float nilaiPH = ((voltage - bPHVal) / mPHVal);
     //=>lcd.print(nilaiPH);
     delay(2000);
-
     if (lama < 604800) {
       EEPROM.get(20, dosis);
       Serial.println("masuk 1");
@@ -172,24 +153,11 @@ bool jalankanAlat() {
 }
 bool kalibrasiTds() {
   lcd.clear();
-  for (int i = 0; i < 2; i++) {
-    // digitalWrite(relay, HIGH);
-    // digitalWrite(relay2, HIGH);
-    // digitalWrite(relay4, LOW);
-    // delay(100);
-    // digitalWrite(relay, LOW);
-    // digitalWrite(relay2, LOW);
-    // digitalWrite(relay4, HIGH);
-    // delay(5000);
-    // digitalWrite(relay4, LOW);
-    // delay(5000);
-    gravityTds.update();                  //sample and calculate
-    tdsValue = gravityTds.getTdsValue();  // then get the value
+  for (int i = 0; i < 3; i++) {
     lcd.setCursor(0, 3);
     lcd.print(tdsValue, 0);
     lcd.print("ppm");
-    Serial.println(tdsValue, 0);
-    // delay(5000);
+    delay(3000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
@@ -210,12 +178,6 @@ bool kalibrasiTds() {
 bool kalibrasipH() {
   lcd.clear();
   for (int i = 0; i < 3; i++) {
-    // int measurings = 0;
-    // for (int i = 0; i < samples; i++) {
-    //   measurings += analogRead(pHSense);
-    //   delay(10);
-    // }
-    // float voltage = 5 / adc_resolution * measurings / samples;
     lcd.setCursor(0, 3);
     lcd.print("pH : ");
     lcd.print(pHSense);
@@ -240,6 +202,7 @@ bool kalibrasipH() {
   EEPROM.put(15, bPHVal);
   return true;
 }
+
 bool pengaturanDosis() {
   lcd.clear();
   for (int i = 0; i < 6; i++) {
@@ -252,6 +215,7 @@ bool pengaturanDosis() {
   }
   return true;
 }
+
 bool resetWaktu() {
   lcd.clear();
   lcd.begin(4, 20);  // initialize the lcd
@@ -292,10 +256,8 @@ void setup() {
   lcd.backlight();
   Serial.begin(115200);
   rtc.begin();
-  gravityTds.setPin(TdsSensorPin);
-  gravityTds.setAref(4.41);      //reference voltage on ADC, default 5.0V on Arduino UNO
-  gravityTds.setAdcRange(1024);  //1024 for 10bit ADC;4096 for 12bit ADC
-  pinMode(TdsSensorPin, INPUT);
+  pinMode(tdsValue, INPUT);  // Mengatur pin sensor sebagai input
+  pinMode(pHSense, INPUT);   // Mengatur pin sensor sebagai input
   pinMode(relay, OUTPUT);
   pinMode(relay2, OUTPUT);
   pinMode(relay3, OUTPUT);
