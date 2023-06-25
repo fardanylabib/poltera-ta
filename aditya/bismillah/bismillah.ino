@@ -6,11 +6,11 @@
 #include <DS3231.h>
 #include <LinearRegression.h>
 #define pHSense A0
-#define tdsValue A1
+int tds = analogRead(A1);
 int samples = 10;
 float nilaiTDS = 0;
-float mTDS[15];
-float bTDS[15];
+float mTDS[12];
+float bTDS[12];
 float mpH[5];
 float bpH[5];
 double nilaiKalibrasiTDS[2] = { 0, 0 };
@@ -58,8 +58,8 @@ bool jalankanAlat() {
   //=> Panggil EEPROM.get() untuk bPHVal dan mPHVal juga
   EEPROM.get(10, mPHVal);
   EEPROM.get(15, bPHVal);
-  Serial.print(mPHVal);
-  Serial.print(bPHVal);
+  Serial.println(mPHVal);
+  Serial.println(bPHVal);
   EEPROM.get(50, timeAcuan);
   rtc.begin();  //begin real time clock
   float dosis;
@@ -77,7 +77,8 @@ bool jalankanAlat() {
     currentTime = rtc.getTime();
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
-    float nilaiTDS = ((tdsValue - bTDSVal) / mTDSVal);  //=> bTDSVal & mTDSVal
+    int tds = analogRead(A1);
+    int nilaiTDS = (tds - bTDSVal) / mTDSVal;  //=> bTDSVal & mTDSVal
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
     lcd.print(dosis);
@@ -97,7 +98,7 @@ bool jalankanAlat() {
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
     lcd.print(nilaiPH);
-    //=>Print nilai PH menggunakan rumus seperti  float nilaiTDS = ((tdsValue - bTDS) / mTDS);
+    //=>Print nilai PH menggunakan rumus seperti  float nilaiTDS = ((tds - bTDS) / mTDS);
     //=>float nilaiPH = ((voltage - bPHVal) / mPHVal);
     //=>lcd.print(nilaiPH);
     delay(2000);
@@ -122,7 +123,7 @@ bool jalankanAlat() {
     }
 
 
-    if (nilaiTDS <= dosis - 50) {
+    if (nilaiTDS <= dosis + 50) {
       Serial.println("semprot");
       digitalWrite(relay3, LOW);
       digitalWrite(relay4, LOW);
@@ -154,15 +155,18 @@ bool jalankanAlat() {
 bool kalibrasiTds() {
   lcd.clear();
   for (int i = 0; i < 3; i++) {
+    int tds = analogRead(A1);
     lcd.setCursor(0, 3);
-    lcd.print(tdsValue, 0);
+    delay(3000);
+    lcd.print(tds);
     lcd.print("ppm");
+    Serial.print(tds);
     delay(3000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float value = getFloatFromKeypad(buff);
-    lr.learn(value, tdsValue);
+    lr.learn(value, tds);
     delay(500);
   }
 
@@ -256,8 +260,8 @@ void setup() {
   lcd.backlight();
   Serial.begin(115200);
   rtc.begin();
-  pinMode(tdsValue, INPUT);  // Mengatur pin sensor sebagai input
-  pinMode(pHSense, INPUT);   // Mengatur pin sensor sebagai input
+  // pinMode(tds, INPUT);  // Mengatur pin sensor sebagai input
+  // pinMode(pHSense, INPUT);   // Mengatur pin sensor sebagai input
   pinMode(relay, OUTPUT);
   pinMode(relay2, OUTPUT);
   pinMode(relay3, OUTPUT);
@@ -266,14 +270,13 @@ void setup() {
 }
 
 void loop() {
-  //float tds = analogRead();
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("1. jalankan Alat");
   lcd.setCursor(0, 1);
   lcd.print("2. Klbrs TDS / 3. pH");  //=> 2. Klbrs TDS / 3. pH  => GINI SAJA
   lcd.setCursor(0, 2);
-  lcd.print("4. Dosis");
+  lcd.print("4. Atur Dosis");
   lcd.setCursor(0, 3);
   lcd.print("5. Reset Waktu");
   char menuTerpilih = getCharFromKeypad();
