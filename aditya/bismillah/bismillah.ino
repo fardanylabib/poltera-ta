@@ -5,14 +5,14 @@
 #include <EEPROM.h>
 #include <DS3231.h>
 #include <LinearRegression.h>
-#define pHSense A0
+int ph = analogRead(A0);
 int tds = analogRead(A1);
 int samples = 10;
 float nilaiTDS = 0;
-float mTDS[12];
-float bTDS[12];
-float mpH[5];
-float bpH[5];
+float mTDSVal[12];
+float bTDSVal[12];
+float mPHVal[5];
+float bPHVal[5];
 double nilaiKalibrasiTDS[2] = { 0, 0 };
 double nilaiKalibrasipH[2] = { 0, 0 };
 int relay = 2;    //nutrisi A
@@ -91,10 +91,10 @@ bool jalankanAlat() {
     delay(2000);
     int measurings = 0;
     for (int i = 0; i < samples; i++) {
-      measurings += analogRead(pHSense);
+      measurings += analogRead(ph);
       delay(10);
     }
-    float nilaiPH = ((pHSense - bPHVal) / mPHVal);
+    float nilaiPH = (ph - bPHVal) / mPHVal;
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
     lcd.print(nilaiPH);
@@ -116,14 +116,14 @@ bool jalankanAlat() {
       Serial.println("masuk 4");
     } else if (lama > 2419200 && lama < 3024000) {
       EEPROM.get(40, dosis);
-      Serial.println("masuk 4");
+      Serial.println("masuk 5");
     } else if (lama > 3024000 && lama < 3628800) {
       EEPROM.get(45, dosis);
-      Serial.println("masuk 1");
+      Serial.println("masuk 6");
     }
 
 
-    if (nilaiTDS <= dosis + 50) {
+    if (nilaiTDS <= dosis - 20) {
       Serial.println("semprot");
       digitalWrite(relay3, LOW);
       digitalWrite(relay4, LOW);
@@ -133,16 +133,12 @@ bool jalankanAlat() {
       digitalWrite(relay4, HIGH);
       digitalWrite(relay, LOW);
       delay(5000);
-      digitalRead(nilaiTDS);
-      delay(2000);
       digitalWrite(relay4, LOW);
       digitalWrite(relay2, HIGH);
       delay(100);
       digitalWrite(relay4, HIGH);
       digitalWrite(relay2, LOW);
       delay(5000);
-      digitalRead(nilaiTDS);
-      delay(2000);
     } else {
       Serial.println("pompa aktif");
       digitalWrite(relay3, HIGH);
@@ -154,7 +150,7 @@ bool jalankanAlat() {
 }
 bool kalibrasiTds() {
   lcd.clear();
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 12; i++) {
     int tds = analogRead(A1);
     lcd.setCursor(0, 3);
     delay(3000);
@@ -182,9 +178,10 @@ bool kalibrasiTds() {
 bool kalibrasipH() {
   lcd.clear();
   for (int i = 0; i < 3; i++) {
+    int tds = analogRead(A1);
     lcd.setCursor(0, 3);
     lcd.print("pH : ");
-    lcd.print(pHSense);
+    lcd.print(ph);
     // lcd.print(ph(voltage)); //=> Jangan pake fungsi ph() lagi
     //=> langsung print:
     //=> lcd.print(voltage);
@@ -193,7 +190,7 @@ bool kalibrasipH() {
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float valuepH = getFloatFromKeypad(buff);
-    lr.learn(valuepH, pHSense);
+    lr.learn(valuepH, ph);
     //lr.learn (valuepH, ph(voltage)); //=> Jangan pake fungsi ph() lagi
     //=> lr.learn (valuepH, voltage);
   }
@@ -261,7 +258,7 @@ void setup() {
   Serial.begin(115200);
   rtc.begin();
   // pinMode(tds, INPUT);  // Mengatur pin sensor sebagai input
-  // pinMode(pHSense, INPUT);   // Mengatur pin sensor sebagai input
+  // pinMode(ph, INPUT);   // Mengatur pin sensor sebagai input
   pinMode(relay, OUTPUT);
   pinMode(relay2, OUTPUT);
   pinMode(relay3, OUTPUT);
