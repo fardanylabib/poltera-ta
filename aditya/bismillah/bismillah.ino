@@ -24,8 +24,6 @@ const byte BARIS = 4;
 const byte KOLOM = 4;
 char buff[16];
 DS3231 rtc(SDA, SCL);  //real time clock connect
-#define DS3231_I2C_ADDRESS 104
-byte seconds, minutes, hours, day, date, month, year;
 char tombol[BARIS][KOLOM] = {
   { '1', '2', '3', 'A' },
   { '4', '5', '6', 'B' },
