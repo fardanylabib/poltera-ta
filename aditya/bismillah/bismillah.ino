@@ -59,6 +59,10 @@ bool jalankanAlat() {
   Serial.println(mPHVal);
   Serial.println(bPHVal);
   EEPROM.get(50, timeAcuan);
+  float erorNilaiTDS;
+  float erorTDSmeter;
+  EEPROM.get(55, erorNilaiTDS);
+  EEPROM.get(60, erorTDSmeter);
   rtc.begin();  //begin real time clock
   float dosis;
   while (1) {
@@ -100,6 +104,10 @@ bool jalankanAlat() {
     //=>float nilaiPH = ((voltage - bPHVal) / mPHVal);
     //=>lcd.print(nilaiPH);
     delay(2000);
+    int eror = ((erorTDSmeter - erorNilaiTDS) * 2) / 12;
+    lcd.setCursor(0, 3);
+    lcd.print("eror TDS: ");
+    lcd.print(eror);
     if (lama < 604800) {
       EEPROM.get(20, dosis);
       Serial.println("masuk 1");
@@ -155,7 +163,6 @@ bool kalibrasiTds() {
     lcd.print(tds);
     lcd.print("ppm");
     Serial.print(tds);
-    delay(3000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
@@ -224,6 +231,37 @@ bool resetWaktu() {
   EEPROM.put(50, timeNumber);
   Serial.println("p");
 }
+bool hitungEror() {
+  lcd.clear();
+  int x, y;
+  float TDSmeter;
+  float bTDSVal;
+  float mTDSVal;
+  EEPROM.get(0, mTDSVal);
+  EEPROM.get(5, bTDSVal);
+  int tds = analogRead(A1);
+  int nilaiTDS = (tds - bTDSVal) / mTDSVal;
+  for (int i = 0; i < 10; i++) {
+    lcd.setCursor(0, 0);
+    lcd.print("nilai tds: ");
+    lcd.print(nilaiTDS);
+    int x = i * 5 + 20;
+    lcd.setCursor(0, 1);
+    lcd.print("tulis TDS meter:");
+    lcd.setCursor(0, 2);
+    lcd.print(i + 1);
+    float TDSmeter = getFloatFromKeypad(buff);
+    int y = i * 5 + 20;
+    EEPROM.put(y, TDSmeter);
+    EEPROM.put(x, nilaiTDS);
+  }
+  EEPROM.get(y, TDSmeter);
+  EEPROM.get(x, nilaiTDS);
+  int erorNilaiTDS = (nilaiTDS, 20) + (nilaiTDS, 25) + (nilaiTDS, 30) + (nilaiTDS, 35) + (nilaiTDS, 40) + (nilaiTDS, 45) + (nilaiTDS, 50) + (nilaiTDS, 55) + (nilaiTDS, 60) + (nilaiTDS, 65) + (nilaiTDS, 70) + (nilaiTDS, 75) + (nilaiTDS, 80) + (nilaiTDS, 85) + (nilaiTDS, 90) + (nilaiTDS, 95);
+  int erorTDSmeter = (TDSmeter, 20) + (TDSmeter, 25) + (TDSmeter, 30) + (TDSmeter, 35) + (TDSmeter, 40) + (TDSmeter, 45) + (TDSmeter, 50) + (TDSmeter, 55) + (TDSmeter, 60) + (TDSmeter, 65) + (TDSmeter, 70) + (TDSmeter, 75) + (TDSmeter, 80) + (TDSmeter, 85) + (TDSmeter, 90) + (TDSmeter, 95);
+  EEPROM.put(55, erorNilaiTDS);
+  EEPROM.put(60, erorTDSmeter);
+}
 char getCharFromKeypad() {
   while (1) {
     char keypressed = customKeypad.getKey();
@@ -290,6 +328,9 @@ void loop() {
       break;
     case '5':
       resetWaktu();
+      break;
+    case '6':
+      hitungEror();
       break;
   }
 }
