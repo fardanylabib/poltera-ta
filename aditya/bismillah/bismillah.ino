@@ -44,25 +44,20 @@ bool jalankanAlat() {
   lcd.clear();
   float bTDSVal;  //=> GANTI nama variabel jadi bTDSVal
   float mTDSVal;  //=> GANTI nama variabel jadi mTDSVal
-  //=> Disini bikin juga variabel seperti diatas (bPHVal dan mPHVal)
-  //=> float bPHVal;
-  //=> float mPHVal;
   float bPHVal;
   float mPHVal;
+  float eror;
   EEPROM.get(0, mTDSVal);  //=> mTDSVal
   EEPROM.get(5, bTDSVal);  //=> bTDSVal
-  Serial.print(mTDSVal);
-  Serial.print(bTDSVal);
+  Serial.println(mTDSVal);
+  Serial.println(bTDSVal);
   //=> Panggil EEPROM.get() untuk bPHVal dan mPHVal juga
   EEPROM.get(10, mPHVal);
   EEPROM.get(15, bPHVal);
   Serial.println(mPHVal);
   Serial.println(bPHVal);
   EEPROM.get(50, timeAcuan);
-  float erorNilaiTDS;
-  float erorTDSmeter;
-  EEPROM.get(55, erorNilaiTDS);
-  EEPROM.get(60, erorTDSmeter);
+  EEPROM.get(55, eror);
   rtc.begin();  //begin real time clock
   float dosis;
   while (1) {
@@ -92,19 +87,11 @@ bool jalankanAlat() {
     lcd.print(nilaiTDS);
     delay(2000);
     int measurings = 0;
-    for (int i = 0; i < samples; i++) {
-      measurings += analogRead(ph);
-      delay(10);
-    }
     float nilaiPH = (ph - bPHVal) / mPHVal;
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
     lcd.print(nilaiPH);
-    //=>Print nilai PH menggunakan rumus seperti  float nilaiTDS = ((tds - bTDS) / mTDS);
-    //=>float nilaiPH = ((voltage - bPHVal) / mPHVal);
-    //=>lcd.print(nilaiPH);
     delay(2000);
-    int eror = ((erorTDSmeter - erorNilaiTDS) * 2) / 12;
     lcd.setCursor(0, 3);
     lcd.print("eror TDS: ");
     lcd.print(eror);
@@ -156,7 +143,8 @@ bool jalankanAlat() {
 }
 bool kalibrasiTds() {
   lcd.clear();
-  for (int i = 0; i < 12; i++) {
+  float sigma = 0;
+  for (int i = 0; i < 20; i++) {
     int tds = analogRead(A1);
     lcd.setCursor(0, 3);
     delay(3000);
@@ -168,14 +156,21 @@ bool kalibrasiTds() {
     lcd.print(i + 1);
     float value = getFloatFromKeypad(buff);
     lr.learn(value, tds);
+    float erorI = value - tds;
+    erorI = erorI * erorI;
+    sigma = sigma + erorI;
     delay(500);
   }
-
+  float sigmaPerN = sigma / 20;
+  // sqrt(sigmaPerN);
+  float eror = sqrt(sigmaPerN);
+  EEPROM.put(55, eror);
   lr.getValues(nilaiKalibrasiTDS);
   float mTDSVal = (float)nilaiKalibrasiTDS[0];
   float bTDSVal = (float)nilaiKalibrasiTDS[1];
-  Serial.print(mTDSVal);
-  Serial.print(bTDSVal);
+
+  Serial.println(mTDSVal);
+  Serial.println(bTDSVal);
   EEPROM.put(0, mTDSVal);
   EEPROM.put(5, bTDSVal);
   return true;
@@ -183,21 +178,16 @@ bool kalibrasiTds() {
 bool kalibrasipH() {
   lcd.clear();
   for (int i = 0; i < 3; i++) {
-    int tds = analogRead(A1);
+    int ph = analogRead(A0);
     lcd.setCursor(0, 3);
     lcd.print("pH : ");
     lcd.print(ph);
-    // lcd.print(ph(voltage)); //=> Jangan pake fungsi ph() lagi
-    //=> langsung print:
-    //=> lcd.print(voltage);
     delay(2000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float valuepH = getFloatFromKeypad(buff);
     lr.learn(valuepH, ph);
-    //lr.learn (valuepH, ph(voltage)); //=> Jangan pake fungsi ph() lagi
-    //=> lr.learn (valuepH, voltage);
   }
   lr.getValues(nilaiKalibrasipH);
   float mPHVal = (float)nilaiKalibrasipH[0];
@@ -231,37 +221,7 @@ bool resetWaktu() {
   EEPROM.put(50, timeNumber);
   Serial.println("p");
 }
-bool hitungEror() {
-  lcd.clear();
-  int x, y;
-  float TDSmeter;
-  float bTDSVal;
-  float mTDSVal;
-  EEPROM.get(0, mTDSVal);
-  EEPROM.get(5, bTDSVal);
-  int tds = analogRead(A1);
-  int nilaiTDS = (tds - bTDSVal) / mTDSVal;
-  for (int i = 0; i < 10; i++) {
-    lcd.setCursor(0, 0);
-    lcd.print("nilai tds: ");
-    lcd.print(nilaiTDS);
-    int x = i * 5 + 20;
-    lcd.setCursor(0, 1);
-    lcd.print("tulis TDS meter:");
-    lcd.setCursor(0, 2);
-    lcd.print(i + 1);
-    float TDSmeter = getFloatFromKeypad(buff);
-    int y = i * 5 + 20;
-    EEPROM.put(y, TDSmeter);
-    EEPROM.put(x, nilaiTDS);
-  }
-  EEPROM.get(y, TDSmeter);
-  EEPROM.get(x, nilaiTDS);
-  int erorNilaiTDS = (nilaiTDS, 20) + (nilaiTDS, 25) + (nilaiTDS, 30) + (nilaiTDS, 35) + (nilaiTDS, 40) + (nilaiTDS, 45) + (nilaiTDS, 50) + (nilaiTDS, 55) + (nilaiTDS, 60) + (nilaiTDS, 65) + (nilaiTDS, 70) + (nilaiTDS, 75) + (nilaiTDS, 80) + (nilaiTDS, 85) + (nilaiTDS, 90) + (nilaiTDS, 95);
-  int erorTDSmeter = (TDSmeter, 20) + (TDSmeter, 25) + (TDSmeter, 30) + (TDSmeter, 35) + (TDSmeter, 40) + (TDSmeter, 45) + (TDSmeter, 50) + (TDSmeter, 55) + (TDSmeter, 60) + (TDSmeter, 65) + (TDSmeter, 70) + (TDSmeter, 75) + (TDSmeter, 80) + (TDSmeter, 85) + (TDSmeter, 90) + (TDSmeter, 95);
-  EEPROM.put(55, erorNilaiTDS);
-  EEPROM.put(60, erorTDSmeter);
-}
+
 char getCharFromKeypad() {
   while (1) {
     char keypressed = customKeypad.getKey();
@@ -293,8 +253,6 @@ void setup() {
   lcd.backlight();
   Serial.begin(115200);
   rtc.begin();
-  // pinMode(tds, INPUT);  // Mengatur pin sensor sebagai input
-  // pinMode(ph, INPUT);   // Mengatur pin sensor sebagai input
   pinMode(relay, OUTPUT);
   pinMode(relay2, OUTPUT);
   pinMode(relay3, OUTPUT);
@@ -328,9 +286,6 @@ void loop() {
       break;
     case '5':
       resetWaktu();
-      break;
-    case '6':
-      hitungEror();
       break;
   }
 }
