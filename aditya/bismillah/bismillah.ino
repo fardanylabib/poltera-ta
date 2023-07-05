@@ -86,7 +86,6 @@ bool jalankanAlat() {
     }
     lcd.print(nilaiTDS);
     delay(2000);
-    int measurings = 0;
     float nilaiPH = (ph - bPHVal) / mPHVal;
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
@@ -221,7 +220,6 @@ bool resetWaktu() {
   EEPROM.put(50, timeNumber);
   Serial.println("p");
 }
-
 char getCharFromKeypad() {
   while (1) {
     char keypressed = customKeypad.getKey();
