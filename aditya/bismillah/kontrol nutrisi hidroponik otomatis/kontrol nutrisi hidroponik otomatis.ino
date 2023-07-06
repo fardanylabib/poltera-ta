@@ -219,9 +219,11 @@ bool resetWaktu() {
 bool eror() {
   lcd.clear();
   float sigma = 0;
+  float bTDSVal;
+  float mTDSVal;
   for (int i = 0; i < 20; i++) {
     int tds = analogRead(A1);
-    // int nilaiTDS = (tds - bTDSVal) / mTDSVal;  //=> bTDSVal & mTDSVal
+    int nilaiTDS = (tds - bTDSVal) / mTDSVal;
     lcd.setCursor(0, 3);
     delay(3000);
     lcd.print(tds);
