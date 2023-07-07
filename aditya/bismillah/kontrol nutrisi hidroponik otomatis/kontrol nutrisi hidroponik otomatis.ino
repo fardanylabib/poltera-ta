@@ -23,6 +23,8 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 const byte BARIS = 4;
 const byte KOLOM = 4;
 char buff[16];
+int rata2 = 100;
+float sensorNilai = 0;
 DS3231 rtc(SDA, SCL);  //real time clock connect
 char tombol[BARIS][KOLOM] = {
   { '1', '2', '3', 'A' },
@@ -74,7 +76,12 @@ bool jalankanAlat() {
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
     int tds = analogRead(A1);
-    int nilaiTDS = (tds - bTDSVal) / mTDSVal;  //=> bTDSVal & mTDSVal
+    for (int i = 0; i < rata2; i++) {
+      sensorNilai += tds;
+      delay(10);
+    }
+    int sensorNilai = sensorNilai / rata2;
+    int nilaiTDS = (sensorNilai - bTDSVal) / mTDSVal;
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
     lcd.print(dosis);
@@ -223,7 +230,12 @@ bool eror() {
   float mTDSVal;
   for (int i = 0; i < 20; i++) {
     int tds = analogRead(A1);
-    int nilaiTDS = (tds - bTDSVal) / mTDSVal;
+    for (int i = 0; i < rata2; i++) {
+      sensorNilai += tds;
+      delay(10);
+    }
+    int sensorNilai = sensorNilai / rata2;
+    int nilaiTDS = (sensorNilai - bTDSVal) / mTDSVal;
     lcd.setCursor(0, 3);
     delay(3000);
     lcd.print(tds);
@@ -241,7 +253,7 @@ bool eror() {
   float sigmaPerN = sigma / 20;
   // sqrt(sigmaPerN);
   float eror = sqrt(sigmaPerN);
-  EEPROM.put(55, eror);  
+  EEPROM.put(55, eror);
 }
 char getCharFromKeypad() {
   while (1) {
