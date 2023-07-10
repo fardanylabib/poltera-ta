@@ -24,7 +24,8 @@ const byte BARIS = 4;
 const byte KOLOM = 4;
 char buff[16];
 int rata2 = 100;
-float sensorNilai = 0;
+float sensorNilaiTDS = 0;
+float sensorNilaiPH = 0;
 DS3231 rtc(SDA, SCL);  //real time clock connect
 char tombol[BARIS][KOLOM] = {
   { '1', '2', '3', 'A' },
@@ -76,12 +77,12 @@ bool jalankanAlat() {
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
     int tds = analogRead(A1);
-    for (int i = 0; i < rata2; i++) {
-      sensorNilai += tds;
-      delay(10);
-    }
+    // for (int i = 0; i < rata2; i++) {
+    //   sensorNilaiTDS += tds;
+    //   delay(10);
+    // }
     int sensorNilai = sensorNilai / rata2;
-    int nilaiTDS = (sensorNilai - bTDSVal) / mTDSVal;
+    int nilaiTDS = (tds - bTDSVal) / mTDSVal;
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
     lcd.print(dosis);
@@ -92,6 +93,7 @@ bool jalankanAlat() {
     }
     lcd.print(nilaiTDS);
     delay(2000);
+    int ph = analogRead(A0);
     float nilaiPH = (ph - bPHVal) / mPHVal;
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
@@ -231,7 +233,7 @@ bool eror() {
   for (int i = 0; i < 20; i++) {
     int tds = analogRead(A1);
     for (int i = 0; i < rata2; i++) {
-      sensorNilai += tds;
+      sensorNilaiTDS += tds;
       delay(10);
     }
     int sensorNilai = sensorNilai / rata2;
