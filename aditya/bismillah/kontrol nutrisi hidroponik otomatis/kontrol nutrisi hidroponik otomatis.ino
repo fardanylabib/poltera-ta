@@ -42,6 +42,8 @@ Time currentTime;
 LinearRegression lr;
 int measurings = 0;
 long timeAcuan;
+int nilaiPH[20];
+int valPH = 0;
 bool jalankanAlat() {
   lcd.clear();
   float bTDSVal;  //=> GANTI nama variabel jadi bTDSVal
@@ -77,12 +79,12 @@ bool jalankanAlat() {
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
     int tds = analogRead(A1);
-    // for (int i = 0; i < rata2; i++) {
-    //   sensorNilaiTDS += tds;
-    //   delay(10);
-    // }
+    for (int i = 0; i < rata2; i++) {
+      sensorNilaiTDS += tds;
+      delay(10);
+    }
     int sensorNilai = sensorNilai / rata2;
-    int nilaiTDS = (tds - bTDSVal) / mTDSVal;
+    int nilaiTDS = (sensorNilai - bTDSVal) / mTDSVal;
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
     lcd.print(dosis);
@@ -94,14 +96,20 @@ bool jalankanAlat() {
     lcd.print(nilaiTDS);
     delay(2000);
     int ph = analogRead(A0);
-    float nilaiPH = (ph - bPHVal) / mPHVal;
+    for (int i = 0; i < 20; i++) {
+      nilaiPH[i] = ph;
+      delay(10);
+      valPH += nilaiPH[i];
+    }
+    float realPH = (float)valPH / 20;
+    float nilaiPH = (realPH - bPHVal) / mPHVal;
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
     lcd.print(nilaiPH);
     delay(2000);
-    lcd.setCursor(0, 3);
-    lcd.print("eror TDS: ");
-    lcd.print(eror);
+    // lcd.setCursor(0, 3);
+    // lcd.print("eror TDS: ");
+    // lcd.print(eror);
     if (lama < 604800) {
       EEPROM.get(20, dosis);
       Serial.println("masuk 1");
@@ -183,15 +191,21 @@ bool kalibrasipH() {
   lcd.clear();
   for (int i = 0; i < 3; i++) {
     int ph = analogRead(A0);
+    for (int i = 0; i < 20; i++) {
+      nilaiPH[i] = ph;
+      delay(10);
+      valPH += nilaiPH[i];
+    }
+    float realPH = (float)valPH / 20;
     lcd.setCursor(0, 3);
     lcd.print("pH : ");
-    lcd.print(ph);
+    lcd.print(realPH);
     delay(2000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float valuepH = getFloatFromKeypad(buff);
-    lr.learn(valuepH, ph);
+    lr.learn(valuepH, realPH);
   }
   lr.getValues(nilaiKalibrasipH);
   float mPHVal = (float)nilaiKalibrasipH[0];
