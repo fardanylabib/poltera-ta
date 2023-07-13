@@ -42,8 +42,6 @@ Time currentTime;
 LinearRegression lr;
 int measurings = 0;
 long timeAcuan;
-int nilaiPH[20];
-int valPH = 0;
 bool jalankanAlat() {
   lcd.clear();
   float bTDSVal;  //=> GANTI nama variabel jadi bTDSVal
@@ -79,12 +77,12 @@ bool jalankanAlat() {
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
     int tds = analogRead(A1);
-    for (int i = 0; i < rata2; i++) {
-      sensorNilaiTDS += tds;
-      delay(10);
-    }
-    int sensorNilai = sensorNilai / rata2;
-    int nilaiTDS = (sensorNilai - bTDSVal) / mTDSVal;
+    // for (int i = 0; i < rata2; i++) {
+    //   sensorNilaiTDS += tds;
+    //   delay(10);
+    // }
+    // int sensorNilai = sensorNilai / rata2;
+    int nilaiTDS = mTDSVal*tds+bTDSVal;
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
     lcd.print(dosis);
@@ -92,17 +90,11 @@ bool jalankanAlat() {
     lcd.print("PPM Sensor: ");
     if (nilaiTDS < 0) {
       nilaiTDS = 0;
-    }
+    }    
     lcd.print(nilaiTDS);
     delay(2000);
     int ph = analogRead(A0);
-    for (int i = 0; i < 20; i++) {
-      nilaiPH[i] = ph;
-      delay(10);
-      valPH += nilaiPH[i];
-    }
-    float realPH = (float)valPH / 20;
-    float nilaiPH = (realPH - bPHVal) / mPHVal;
+    float nilaiPH = mPHVal*ph+bPHVal;
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
     lcd.print(nilaiPH);
@@ -159,7 +151,7 @@ bool jalankanAlat() {
 bool kalibrasiTds() {
   lcd.clear();
   float sigma = 0;
-  for (int i = 0; i < 20; i++) {
+  for (int i = 0; i < 7; i++) {
     int tds = analogRead(A1);
     lcd.setCursor(0, 3);
     delay(3000);
@@ -170,10 +162,7 @@ bool kalibrasiTds() {
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float value = getFloatFromKeypad(buff);
-    lr.learn(value, tds);
-    float erorI = value - tds;
-    erorI = erorI * erorI;
-    sigma = sigma + erorI;
+    lr.learn(tds, value);
     delay(500);
   }
 
@@ -191,21 +180,15 @@ bool kalibrasipH() {
   lcd.clear();
   for (int i = 0; i < 3; i++) {
     int ph = analogRead(A0);
-    for (int i = 0; i < 20; i++) {
-      nilaiPH[i] = ph;
-      delay(10);
-      valPH += nilaiPH[i];
-    }
-    float realPH = (float)valPH / 20;
     lcd.setCursor(0, 3);
     lcd.print("pH : ");
-    lcd.print(realPH);
+    lcd.print(ph);
     delay(2000);
     lcd.setCursor(0, 0);
     lcd.print("nilai : ");
     lcd.print(i + 1);
     float valuepH = getFloatFromKeypad(buff);
-    lr.learn(valuepH, realPH);
+    lr.learn(ph, valuepH);
   }
   lr.getValues(nilaiKalibrasipH);
   float mPHVal = (float)nilaiKalibrasipH[0];
