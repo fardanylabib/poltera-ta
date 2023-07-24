@@ -77,11 +77,6 @@ bool jalankanAlat() {
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
     int tds = analogRead(A1);
-    // for (int i = 0; i < rata2; i++) {
-    //   sensorNilaiTDS += tds;
-    //   delay(10);
-    // }
-    // int sensorNilai = sensorNilai / rata2;
     int nilaiTDS = mTDSVal*tds+bTDSVal;
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
@@ -123,7 +118,7 @@ bool jalankanAlat() {
     }
 
 
-    if (nilaiTDS <= dosis - 20) {
+    if (nilaiTDS <= dosis+50 || nilaiTDS <= dosis-50) {
       Serial.println("semprot");
       digitalWrite(relay3, LOW);
       digitalWrite(relay4, LOW);
