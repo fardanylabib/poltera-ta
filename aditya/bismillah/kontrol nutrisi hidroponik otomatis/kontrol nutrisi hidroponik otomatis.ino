@@ -77,7 +77,7 @@ bool jalankanAlat() {
     long timeNumber = rtc.getUnixTime(currentTime);
     long lama = timeNumber - timeAcuan;
     int tds = analogRead(A1);
-    int nilaiTDS = mTDSVal*tds+bTDSVal;
+    int nilaiTDS = mTDSVal * tds + bTDSVal;
     lcd.setCursor(0, 0);
     lcd.print("PPM mg ini: ");
     lcd.print(dosis);
@@ -85,11 +85,11 @@ bool jalankanAlat() {
     lcd.print("PPM Sensor: ");
     if (nilaiTDS < 0) {
       nilaiTDS = 0;
-    }    
+    }
     lcd.print(nilaiTDS);
     delay(2000);
     int ph = analogRead(A0);
-    float nilaiPH = mPHVal*ph+bPHVal;
+    float nilaiPH = mPHVal * ph + bPHVal;
     lcd.setCursor(0, 2);
     lcd.print("pH : ");
     lcd.print(nilaiPH);
@@ -117,8 +117,10 @@ bool jalankanAlat() {
       Serial.println("masuk 6");
     }
 
-
-    if (nilaiTDS <= dosis+50 || nilaiTDS <= dosis-50) {
+    bool mati = false;
+    if (nilaiTDS < dosis - 50) {
+      mati = false;
+      Serial.println("1");
       Serial.println("semprot");
       digitalWrite(relay3, LOW);
       digitalWrite(relay4, LOW);
@@ -134,7 +136,35 @@ bool jalankanAlat() {
       digitalWrite(relay4, HIGH);
       digitalWrite(relay2, LOW);
       delay(5000);
+    } else if (nilaiTDS < dosis + 50) {
+      if (mati == true) {
+        Serial.println("2");
+        Serial.println("pompa aktif");
+        digitalWrite(relay3, HIGH);
+        digitalWrite(relay, LOW);
+        digitalWrite(relay2, LOW);
+        digitalWrite(relay4, LOW);
+      } else {
+        Serial.println("3");
+        Serial.println("semprot");
+        digitalWrite(relay3, LOW);
+        digitalWrite(relay4, LOW);
+        digitalWrite(relay, HIGH);
+        digitalWrite(relay2, LOW);
+        delay(100);
+        digitalWrite(relay4, HIGH);
+        digitalWrite(relay, LOW);
+        delay(5000);
+        digitalWrite(relay4, LOW);
+        digitalWrite(relay2, HIGH);
+        delay(100);
+        digitalWrite(relay4, HIGH);
+        digitalWrite(relay2, LOW);
+        delay(5000);
+      }
     } else {
+      mati = true;
+      Serial.println("4");      
       Serial.println("pompa aktif");
       digitalWrite(relay3, HIGH);
       digitalWrite(relay, LOW);
