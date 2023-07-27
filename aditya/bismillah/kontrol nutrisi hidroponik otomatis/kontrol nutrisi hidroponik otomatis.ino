@@ -42,6 +42,7 @@ Time currentTime;
 LinearRegression lr;
 int measurings = 0;
 long timeAcuan;
+bool mati = false;
 bool jalankanAlat() {
   lcd.clear();
   float bTDSVal;  //=> GANTI nama variabel jadi bTDSVal
@@ -63,6 +64,7 @@ bool jalankanAlat() {
   rtc.begin();  //begin real time clock
   float dosis;
   while (1) {
+    lcd.clear();
     char keypressed = customKeypad.getKey();
     if (keypressed == 'A') {
       Serial.println("di tekan A");
@@ -87,7 +89,6 @@ bool jalankanAlat() {
       nilaiTDS = 0;
     }
     lcd.print(nilaiTDS);
-    delay(2000);
     int ph = analogRead(A0);
     float nilaiPH = mPHVal * ph + bPHVal;
     lcd.setCursor(0, 2);
@@ -116,8 +117,6 @@ bool jalankanAlat() {
       EEPROM.get(45, dosis);
       Serial.println("masuk 6");
     }
-
-    bool mati = false;
     if (nilaiTDS < dosis - 50) {
       mati = false;
       Serial.println("1");
@@ -164,7 +163,7 @@ bool jalankanAlat() {
       }
     } else {
       mati = true;
-      Serial.println("4");      
+      Serial.println("4");
       Serial.println("pompa aktif");
       digitalWrite(relay3, HIGH);
       digitalWrite(relay, LOW);
